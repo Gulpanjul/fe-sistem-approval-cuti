@@ -3,16 +3,46 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "../api/axios";
 import { useState } from "react";
 
+// Definisikan tipe data untuk cuti
+interface Employee {
+  id: number;
+  username: string;
+  name: string;
+  role: string;
+}
+
+interface History {
+  id: number;
+  createdAt: string;
+  actor?: Employee;
+  role: string;
+  action: string;
+  comment?: string;
+}
+
+interface Cuti {
+  id: number;
+  employeeId: number;
+  type: string;
+  reason: string;
+  startDate: string;
+  endDate: string;
+  status: string;
+  attachment?: string | null;
+  employee: Employee;
+  histories: History[];
+}
+
 export default function CutiDetail() {
-  const { id } = useParams();
+  const { id } = useParams<{ id: string }>();
   const queryClient = useQueryClient();
 
   const rawUser = localStorage.getItem("user");
-  const user = rawUser ? JSON.parse(rawUser) : null;
+  const user: Employee | null = rawUser ? JSON.parse(rawUser) : null;
   const role = (localStorage.getItem("role") || user?.role || "").toUpperCase();
   const [comment, setComment] = useState("");
 
-  const { data, isLoading, isError } = useQuery({
+  const { data, isLoading, isError } = useQuery<Cuti>({
     queryKey: ["cuti-detail", id],
     queryFn: async () => (await api.get(`/cuti/${id}`)).data,
     enabled: !!id,
@@ -51,10 +81,7 @@ export default function CutiDetail() {
     (role === "HEAD" && status === "pending_head") ||
     (role === "GM" && status === "pending_gm");
 
-  const canRequestRevision =
-    (role === "HEAD" && status === "pending_head") ||
-    (role === "GM" && status === "pending_gm");
-
+  const canRequestRevision = canApprove;
   const canReject = canApprove;
 
   return (
@@ -97,7 +124,6 @@ export default function CutiDetail() {
         )}
       </div>
 
-      {/* Aksi hanya muncul untuk Head atau GM */}
       {(canApprove || canReject || canRequestRevision) && (
         <div className="border p-4 rounded-lg bg-gray-100">
           <h2 className="font-semibold mb-2">Aksi</h2>
@@ -152,7 +178,7 @@ export default function CutiDetail() {
               </tr>
             </thead>
             <tbody>
-              {histories.map((h: any) => (
+              {histories.map((h) => (
                 <tr key={h.id}>
                   <td className="p-2 border">
                     {new Date(h.createdAt).toLocaleString()}

@@ -2,11 +2,18 @@ import { useState, useEffect } from "react";
 import { api } from "../api/axios";
 import { Link, useNavigate, useParams } from "react-router-dom";
 
+interface CutiForm {
+  startDate: string;
+  endDate: string;
+  type: "TAHUNAN" | "SAKIT" | "IZIN";
+  reason: string;
+}
+
 export default function CutiEdit() {
   const navigate = useNavigate();
-  const { id } = useParams();
+  const { id } = useParams<{ id: string }>();
   const [loading, setLoading] = useState(true);
-  const [form, setForm] = useState({
+  const [form, setForm] = useState<CutiForm>({
     startDate: "",
     endDate: "",
     type: "TAHUNAN",
@@ -35,10 +42,10 @@ export default function CutiEdit() {
         setLoading(false);
       }
     };
-    fetchCuti();
+    if (id) fetchCuti();
   }, [id]);
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     try {
       await api.put(`/cuti/${id}`, form);
@@ -72,7 +79,9 @@ export default function CutiEdit() {
         />
         <select
           value={form.type}
-          onChange={(e) => setForm({ ...form, type: e.target.value })}
+          onChange={(e) =>
+            setForm({ ...form, type: e.target.value as CutiForm["type"] })
+          }
           className="border p-2 w-full"
         >
           <option value="TAHUNAN">Tahunan</option>

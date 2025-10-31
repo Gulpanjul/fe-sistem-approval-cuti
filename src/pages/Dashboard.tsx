@@ -2,15 +2,34 @@ import { useQuery } from "@tanstack/react-query";
 import { api } from "../api/axios";
 import { Link, useNavigate } from "react-router-dom";
 
+interface Employee {
+  id: number;
+  name: string;
+  role: string;
+}
+
+interface Cuti {
+  id: number;
+  startDate: string;
+  endDate: string;
+  type: string;
+  status: string;
+  employee: Employee;
+}
+
 export default function Dashboard() {
   const navigate = useNavigate();
-  const { data, isLoading, isError } = useQuery({
+
+  const { data, isLoading, isError } = useQuery<Cuti[]>({
     queryKey: ["cuti"],
-    queryFn: async () => (await api.get("/cuti")).data.data,
+    queryFn: async () => {
+      const res = await api.get("/cuti");
+      return res.data.data;
+    },
   });
 
   const rawUser = localStorage.getItem("user");
-  const user = rawUser ? JSON.parse(rawUser) : null;
+  const user: Employee | null = rawUser ? JSON.parse(rawUser) : null;
   const role = (user?.role || "").toUpperCase();
 
   const handleLogout = () => {
@@ -39,8 +58,9 @@ export default function Dashboard() {
     }
   };
 
-  if (isLoading) return <p>Loading...</p>;
-  if (isError) return <p className="text-red-500">Gagal memuat data cuti.</p>;
+  if (isLoading) return <p className="p-4">Loading...</p>;
+  if (isError)
+    return <p className="p-4 text-red-500">Gagal memuat data cuti.</p>;
 
   return (
     <div className="p-4">
@@ -57,7 +77,7 @@ export default function Dashboard() {
       {role === "EMPLOYEE" && (
         <Link
           to="/cuti/add"
-          className="bg-green-500 text-white px-4 py-2 rounded"
+          className="bg-green-500 text-white px-4 py-2 rounded mb-2 inline-block"
         >
           + Ajukan Cuti
         </Link>
@@ -76,7 +96,7 @@ export default function Dashboard() {
             </tr>
           </thead>
           <tbody>
-            {data.map((c: any) => (
+            {data.map((c) => (
               <tr key={c.id}>
                 <td className="p-2 border">{c.type}</td>
                 <td className="p-2 border">
